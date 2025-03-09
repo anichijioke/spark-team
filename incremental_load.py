@@ -3,7 +3,7 @@ from pyspark.sql.functions import *
 
 spark = SparkSession.builder.master("local").appName("MiniProj").enableHiveSupport().getOrCreate()
 
-max_uid = spark.sql("SELECT max(uid) FROM big_data_jan2025.tfl_underground_pysparks")
+max_uid = spark.sql("SELECT max(uid) FROM big_data_jan2025.tfl_underground_pyspark")
 max_uid = max_uid.collect()[0][0]
 
 query = 'SELECT * FROM new_tfl2 WHERE uid > ' + str(max_uid)
