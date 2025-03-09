@@ -13,7 +13,7 @@ more_data = spark.read.format("jdbc").option("url", "jdbc:postgresql://18.170.23
 
 # Step 2: Transform - Clean and Format the Data
     # Convert 'Timestamp' to proper timestamp format
-df_transformed = more_data.withColumn("Timestamp", F.to_timestamp(col("timestamp"), "dd/MM/yyyy HH:mm"))
+df_transformed = more_data.withColumn("timestamp", F.to_timestamp(col("timestamp"), "dd/MM/yyyy HH:mm"))
 
     # Replace "N/A" with null
 df_transformed = df_transformed.replace("N/A", None)
