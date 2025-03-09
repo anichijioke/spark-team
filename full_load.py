@@ -18,5 +18,5 @@ df_transformed = df.replace("N/A", None)
 df_transformed.write.mode("append").insertInto("tfl_underground")
 
 
-df.write.mode("overwrite").saveAsTable("big_data_jan2025.full-load-pyspark")
+df.write.mode("overwrite").saveAsTable("big_data_jan2025.full_load_pyspark")
 print("Successfully Load to Hive")
