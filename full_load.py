@@ -17,5 +17,5 @@ df_transformed = df.replace("N/A", None)
     # Step 3: Insert Transformed Data into Hive Table
 
 
-df.write.mode("overwrite").saveAsTable("big_data_jan2025.full_load_pyspark")
+df.write.mode("overwrite").saveAsTable("big_data_jan2025.tfl_underground_pyspark")
 print("Successfully Load to Hive")
