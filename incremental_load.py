@@ -1,5 +1,6 @@
 from pyspark.sql import *
 from pyspark.sql.functions import *
+import pyspark.sql.functions as F
 
 spark = SparkSession.builder.master("local").appName("MiniProj").enableHiveSupport().getOrCreate()
 
