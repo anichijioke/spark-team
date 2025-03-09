@@ -9,7 +9,7 @@ df.printSchema()
 
 # Step 2: Transform - Clean and Format the Data
     # Convert 'Timestamp' to proper timestamp format
-df_transformed = df.withColumn("Timestamp", F.to_timestamp(col("Timestamp"), "dd/MM/yyyy HH:mm"))
+df_transformed = df.withColumn("Timestamp", F.to_timestamp(col("time"), "dd/MM/yyyy HH:mm"))
 
     # Replace "N/A" with null
 df_transformed = df.replace("N/A", None)
