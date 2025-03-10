@@ -14,13 +14,13 @@ TARGET_TABLE = "tfl_Underground_Result"
 
 # Use the Hive database
 spark.sql(f"USE {HIVE_DB}")
-
+print(f"using hive database")
 # Load data from the source table
-df_source = spark.sql(f"SELECT * FROM {SOURCE_TABLE}")
-
+df_source = spark.sql(f"SELECT * FROM {HIVE_DB.SOURCE_TABLE}")
+print(f" fetching data source!")
 # Add a new 'record_id' column (unique identifier)
 df_with_id = df_source.withColumn("record_id", monotonically_increasing_id())
-
+print(f"record_id added successfully")
 # Write data into the target table
 df_with_id.write.mode("append").saveAsTable(TARGET_TABLE)
 
