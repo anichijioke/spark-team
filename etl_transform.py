@@ -16,7 +16,7 @@ TARGET_TABLE = "tfl_Underground_Result"
 # spark.sql(f"USE {HIVE_DB}")
 
 # Load data from the source table
-df_source = spark.sql(f"SELECT * FROM {HIVE_DB.SOURCE_TABLE}")
+df_source = spark.sql("SELECT * FROM default.tfl_undergroundrecord")
 
 # Add a new 'record_id' column (unique identifier)
 df_with_id = df_source.withColumn("record_id", monotonically_increasing_id())
