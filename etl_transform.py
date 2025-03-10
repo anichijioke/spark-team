@@ -10,7 +10,7 @@ spark = SparkSession.builder \
 # Define database and tables
 HIVE_DB = "default"
 SOURCE_TABLE = " tfl_undergroundrecord"
-TARGET_TABLE = "tfl_Underground_Result"
+TARGET_TABLE = "tfl_underground_result"
 
 # Use the Hive database
 # spark.sql(f"USE {HIVE_DB}")
