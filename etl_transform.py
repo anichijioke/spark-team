@@ -13,7 +13,7 @@ SOURCE_TABLE = " tfl_undergroundrecord"
 TARGET_TABLE = "tfl_Underground_Result"
 
 # Use the Hive database
-spark.sql(f"USE {HIVE_DB}")
+# spark.sql(f"USE {HIVE_DB}")
 print(f"using hive database")
 # Load data from the source table
 df_source = spark.sql(f"SELECT * FROM {HIVE_DB.SOURCE_TABLE}")
