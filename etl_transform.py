@@ -13,8 +13,8 @@ HIVE_DB = "default"
 SOURCE_TABLE = "tfl_undergroundrecord"
 TARGET_TABLE = "tfl_underground_result"
 
-# Load data from the source table
-df_source = spark.sql(f"SELECT * FROM {HIVE_DB}.{SOURCE_TABLE}")
+# Load data from the source table (Fixed Syntax)
+df_source = spark.sql("SELECT * FROM {}.{}".format(HIVE_DB, SOURCE_TABLE))
 
 # Add an "ingestion_timestamp" column
 df_with_id = df_source.withColumn("ingestion_timestamp", current_timestamp())
@@ -27,7 +27,7 @@ df_with_id = df_with_id.filter(col("route").isNotNull())
 
 # Retrieve the maximum existing order_id from the target table
 try:
-    max_order_id = spark.sql(f"SELECT MAX(order_id) FROM {HIVE_DB}.{TARGET_TABLE}").collect()[0][0]
+    max_order_id = spark.sql("SELECT MAX(order_id) FROM {}.{}".format(HIVE_DB, TARGET_TABLE)).collect()[0][0]
     if max_order_id is None:
         max_order_id = 0  # If table is empty, start from 1
 except:
@@ -46,7 +46,7 @@ expected_columns = ["order_id", "timedetails", "line", "status", "reason", "dela
 df_with_id = df_with_id.select(*expected_columns)
 
 # Append data into the existing Hive table
-df_with_id.write.mode("append").insertInto(f"{HIVE_DB}.{TARGET_TABLE}")
+df_with_id.write.mode("append").insertInto("{}.{}".format(HIVE_DB, TARGET_TABLE))
 
 # Stop Spark session
 spark.stop()
