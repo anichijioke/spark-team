@@ -1,5 +1,5 @@
 from pyspark.sql import SparkSession
-from pyspark.sql.functions import col, current_timestamp, monotonically_increasing_id, regexp_replace
+from pyspark.sql.functions import col, current_timestamp, monotonically_increasing_id
 
 # Create Spark session with Hive support
 spark = SparkSession.builder \
@@ -25,7 +25,8 @@ df_with_id = df_source.withColumn("record_id", monotonically_increasing_id())
 df_with_id = df_with_id.withColumn("ingestion_timestamp", current_timestamp())
 
 # Remove quotes from the "route" column
-df_with_id = df_with_id.withColumn("route", regexp_replace(col("route"), r'["\']', ''))
+# Filtering records based on a condition (Example: removing NULL values)
+df_with_id = df_with_id.filter(col("route").isNotNull())
 
 # Write data into the target table
 #df_with_id.write.mode("append").saveAsTable(TARGET_TABLE)
