@@ -9,14 +9,14 @@ spark = SparkSession.builder \
 
 # Define database and tables
 HIVE_DB = "default"
-SOURCE_TABLE = " tfl_undergroundrecord"
+SOURCE_TABLE = " tfl_underground"
 TARGET_TABLE = "tfl_underground_result"
 
 # Use the Hive database
 # spark.sql(f"USE {HIVE_DB}")
 
 # Load data from the source table
-df_source = spark.sql("SELECT * FROM default.tfl_undergroundrecord")
+df_source = spark.sql("SELECT * FROM default.tfl_underground")
 
 # Add a new 'record_id' column (unique identifier)
 df_with_id = df_source.withColumn("record_id", monotonically_increasing_id())
