@@ -40,9 +40,13 @@ except:
 window_spec = Window.orderBy(monotonically_increasing_id())
 df_with_id = df_with_id.withColumn("order_id", row_number().over(window_spec) + max_order_id)
 
-# Select final columns to match Hive schema
-expected_columns = ["order_id", "route", "record_id", "ingestion_timestamp"]
+# Ensure column order matches Hive table
+expected_columns = ["order_id", "route", "record_id", "ingestion_timestamp", "col5", "col6", "col7", "col8"]  # Change based on Hive table
 df_with_id = df_with_id.select(*expected_columns)
+
+# Debugging: Print schema before writing
+df_with_id.printSchema()
+df_with_id.show(5)
 
 # Append data into the existing Hive table
 df_with_id.write.mode("append").insertInto("{}.{}".format(HIVE_DB, TARGET_TABLE))
