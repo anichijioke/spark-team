@@ -21,6 +21,9 @@ df_source = spark.sql("SELECT * FROM default.tfl_underground")
 # Add a new 'record_id' column (unique identifier)
 df_with_id = df_source.withColumn("record_id", monotonically_increasing_id())
 
+# 3. Adding an "ingestion_timestamp" column
+df_with_id = df_with_id.withColumn("ingestion_timestamp", current_timestamp())
+
 # Write data into the target table
 #df_with_id.write.mode("append").saveAsTable(TARGET_TABLE)
 df_with_id.write.mode("append").format("hive").saveAsTable(TARGET_TABLE)
