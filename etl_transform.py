@@ -27,20 +27,7 @@ df_with_id = df_with_id.withColumn("route", regexp_replace(col("route"), r'^[\'"
 # Remove NULL values from the route column
 df_with_id = df_with_id.filter(col("route").isNotNull())
 
-# Check if the target table exists in Hive
-table_check = spark.sql("SHOW TABLES IN {}".format(HIVE_DB)).filter(col("tableName") == TARGET_TABLE).count()
-
-# If the table does not exist, create it
-if table_check == 0:
-    spark.sql("""
-        CREATE TABLE {}.{} (
-            route STRING,
-            record_id BIGINT,
-            ingestion_timestamp TIMESTAMP
-        ) STORED AS PARQUET
-    """.format(HIVE_DB, TARGET_TABLE))
-
-# Append data instead of overwriting
+# Append data to the existing table without recreating it
 df_with_id.write.mode("append").format("hive").saveAsTable("{}.{}".format(HIVE_DB, TARGET_TABLE))
 
 # Stop Spark session
