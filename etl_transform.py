@@ -27,8 +27,8 @@ df_with_id = df_with_id.withColumn("route", regexp_replace(col("route"), r'^[\'"
 # Remove NULL values from the route column
 df_with_id = df_with_id.filter(col("route").isNotNull())
 
-# Append data to the existing table without recreating it
-df_with_id.write.mode("append").format("hive").saveAsTable("{}.{}".format(HIVE_DB, TARGET_TABLE))
+# Append data into the existing Hive table
+df_with_id.write.mode("append").insertInto("{}.{}".format(HIVE_DB, TARGET_TABLE))
 
 # Stop Spark session
 spark.stop()
