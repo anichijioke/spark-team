@@ -22,7 +22,9 @@ df_source = spark.sql("SELECT * FROM default.tfl_undergroundrecord")
 df_with_id = df_source.withColumn("record_id", monotonically_increasing_id())
 
 # Write data into the target table
-df_with_id.write.mode("append").saveAsTable(TARGET_TABLE)
+#df_with_id.write.mode("append").saveAsTable(TARGET_TABLE)
+df_with_id.write.mode("append").format("hive").saveAsTable(TARGET_TABLE)
+
 
 # print(f"Data successfully inserted from {SOURCE_TABLE} to {TARGET_TABLE} with record_id!")
 
