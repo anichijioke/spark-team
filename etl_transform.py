@@ -1,4 +1,5 @@
 from pyspark.sql import SparkSession
+from pyspark.sql.functions import col, current_timestamp
 from pyspark.sql.functions import monotonically_increasing_id
 
 # Create Spark session with Hive support
