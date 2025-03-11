@@ -12,8 +12,8 @@ HIVE_DB = "default"
 SOURCE_TABLE = "tfl_undergroundrecord"
 TARGET_TABLE = "tfl_underground_result"
 
-# Load data from the source table
-df_source = spark.sql(f"SELECT * FROM {HIVE_DB}.{SOURCE_TABLE}")
+# Load data from the source table (Use .format() instead of f-strings)
+df_source = spark.sql("SELECT * FROM {}.{}".format(HIVE_DB, SOURCE_TABLE))
 
 # Add a new 'record_id' column (unique identifier)
 df_with_id = df_source.withColumn("record_id", monotonically_increasing_id())
@@ -28,7 +28,7 @@ df_with_id = df_with_id.withColumn("route", regexp_replace(col("route"), r'^[\'"
 df_with_id = df_with_id.filter(col("route").isNotNull())
 
 # Write data into the target table
-df_with_id.write.mode("overwrite").format("hive").saveAsTable(f"{HIVE_DB}.{TARGET_TABLE}")
+df_with_id.write.mode("overwrite").format("hive").saveAsTable("{}.{}".format(HIVE_DB, TARGET_TABLE))
 
 # Stop Spark session
 spark.stop()
