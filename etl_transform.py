@@ -14,14 +14,15 @@ HIVE_DB = "default"
 SOURCE_TABLE = "tfl_undergroundrecord"
 TARGET_TABLE = "tfl_underground_result"
 
-# Load data from the source table (Fixed Syntax)
+# Load data from the source table
 df_source = spark.sql("SELECT * FROM {}.{}".format(HIVE_DB, SOURCE_TABLE))
 
 # Add an "ingestion_timestamp" column
 df_transformed = df_source.withColumn("ingestion_timestamp", current_timestamp())
 
-# Remove all leading and trailing quotes from the "route" column
+# Remove ALL leading and trailing quotes from "route" and "delay_time" columns
 df_transformed = df_transformed.withColumn("route", regexp_replace(col("route"), r'^[\'"]+|[\'"]+$', ''))
+df_transformed = df_transformed.withColumn("delay_time", regexp_replace(col("delay_time"), r'^[\'"]+|[\'"]+$', ''))
 
 # Remove NULL values from the route column
 df_transformed = df_transformed.filter(col("route").isNotNull())
@@ -42,7 +43,7 @@ df_transformed = df_transformed.withColumn("record_id", row_number().over(window
 df_transformed = df_transformed.withColumn("record_id", col("record_id").cast(IntegerType()))
 
 # Debugging: Ensure record_id is not NULL before writing
-df_transformed.select("record_id", "timedetails", "route").show(10)
+df_transformed.select("record_id", "timedetails", "route", "delay_time").show(10)
 
 # Ensure column order matches Hive table
 expected_columns = ["record_id", "timedetails", "line", "status", "reason", "delay_time", "route", "ingestion_timestamp"]
