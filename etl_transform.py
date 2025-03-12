@@ -42,7 +42,7 @@ expected_columns = ["record_id", "timedetails", "line", "status", "reason", "del
 df_final = df_transformed.select(*expected_columns)
 
 # Append data into the existing Hive table
-df_final.write.mode("append").insertInto(f"{HIVE_DB}.{TARGET_TABLE}")
+df_with_id.write.mode("append").insertInto("{}.{}".format(HIVE_DB, TARGET_TABLE))
 
 # Stop Spark session
 spark.stop()
