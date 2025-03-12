@@ -1,6 +1,7 @@
 from pyspark.sql import SparkSession
 from pyspark.sql.functions import col, current_timestamp, regexp_replace, row_number
 from pyspark.sql.window import Window
+from pyspark.sql.types import IntegerType
 
 # Create Spark session with Hive support
 spark = SparkSession.builder \
@@ -36,6 +37,12 @@ except:
 # Generate an auto-incremented record_id based on row_number()
 window_spec = Window.orderBy("ingestion_timestamp")  # Order by timestamp for sequential assignment
 df_transformed = df_transformed.withColumn("record_id", row_number().over(window_spec) + max_record_id)
+
+# Cast record_id to Integer
+df_transformed = df_transformed.withColumn("record_id", col("record_id").cast(IntegerType()))
+
+# Debugging: Ensure record_id is not NULL before writing
+df_transformed.select("record_id", "timedetails", "route").show(10)
 
 # Ensure column order matches Hive table
 expected_columns = ["record_id", "timedetails", "line", "status", "reason", "delay_time", "route", "ingestion_timestamp"]
