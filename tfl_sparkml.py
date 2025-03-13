@@ -5,7 +5,7 @@ from pyspark.sql import SparkSession
 from pyspark.sql.functions import (
     col, hour, dayofweek, month, year, regexp_replace
 )
-from pyspark.ml.feature import StringIndexer, OneHotEncoder, VectorAssembler
+from pyspark.ml.feature import StringIndexer, OneHotEncoderEstimator, VectorAssembler
 from pyspark.ml.classification import RandomForestClassifier
 
 # =======================
@@ -50,9 +50,9 @@ for indexer in indexers:
     df = indexer.transform(df)
 
 # =======================
-# ONE-HOT ENCODING (New Syntax for Spark 3.5.4)
+# ONE-HOT ENCODING (Using OneHotEncoderEstimator for Cloudera compatibility)
 # =======================
-encoder = OneHotEncoder(
+encoder = OneHotEncoderEstimator(
     inputCols=["line_index", "reason_index", "route_index"],
     outputCols=["line_vec", "reason_vec", "route_vec"]
 )
