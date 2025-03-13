@@ -13,6 +13,10 @@ from pyspark.ml.classification import RandomForestClassifier
 # =======================
 spark = SparkSession.builder \
     .appName("Hive_Spark_Classification") \
+    .config("spark.executor.memory", "6g") \
+    .config("spark.driver.memory", "4g") \
+    .config("spark.executor.cores", "2") \
+    .config("spark.num.executors", "4") \
     .enableHiveSupport() \
     .getOrCreate()
 
@@ -22,14 +26,14 @@ spark = SparkSession.builder \
 df = spark.sql("SELECT * FROM default.tfl_underground_result_n")
 
 # =======================
-# PRINT SCHEMA TO DEBUG COLUMN NAMES
+# CACHE DATAFRAME TO AVOID RECOMPUTATION
 # =======================
-df.printSchema()
+df.cache()
+df.count()  # Force cache to load data
 
 # =======================
 # FEATURE ENGINEERING
 # =======================
-
 df = df.withColumn('hour', hour(col('ingestion_timestamp')))
 df = df.withColumn('day_of_week', dayofweek(col('ingestion_timestamp')))
 df = df.withColumn('month', month(col('ingestion_timestamp')))
@@ -50,6 +54,11 @@ for indexer in indexers:
     df = indexer.transform(df)
 
 # =======================
+# REDUCE DATA SIZE BY REPARTITIONING
+# =======================
+df = df.repartition(100)
+
+# =======================
 # ONE-HOT ENCODING (Using OneHotEncoderEstimator for Cloudera compatibility)
 # =======================
 encoder = OneHotEncoderEstimator(
@@ -58,6 +67,12 @@ encoder = OneHotEncoderEstimator(
 )
 
 df = encoder.fit(df).transform(df)
+
+# =======================
+# CACHE TRANSFORMED DATA TO SPEED UP PROCESSING
+# =======================
+df.cache()
+df.count()  # Force Spark to cache the new transformed dataset
 
 # =======================
 # VECTOR ASSEMBLER (Combine all features)
@@ -74,12 +89,18 @@ data = assembler.transform(df).select("features", "status_index")
 train_data, test_data = data.randomSplit([0.8, 0.2], seed=123)
 
 # =======================
+# CACHE TRAIN DATA
+# =======================
+train_data.cache()
+train_data.count()  # Preload train data
+
+# =======================
 # MODEL TRAINING AND PREDICTION
 # =======================
 
-# Train Random Forest Model
+# Train Random Forest Model with optimized settings
 print("Training Random Forest...")
-rf = RandomForestClassifier(featuresCol="features", labelCol="status_index", numTrees=50)
+rf = RandomForestClassifier(featuresCol="features", labelCol="status_index", numTrees=50, maxDepth=10)
 rf_model = rf.fit(train_data)
 
 # Predict on Test Data
