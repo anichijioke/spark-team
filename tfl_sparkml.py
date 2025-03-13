@@ -2,9 +2,11 @@
 # IMPORT LIBRARIES
 # =======================
 from pyspark.sql import SparkSession
-from pyspark.sql.functions import col, hour, dayofweek, month, year, regexp_replace
+from pyspark.sql.functions import (
+    col, hour, dayofweek, month, year, regexp_replace
+)
 from pyspark.ml.feature import StringIndexer, OneHotEncoder, VectorAssembler
-from pyspark.ml.classification import LogisticRegression, RandomForestClassifier
+from pyspark.ml.classification import RandomForestClassifier
 
 # =======================
 # CREATE SPARK SESSION WITH HIVE SUPPORT
@@ -20,13 +22,20 @@ spark = SparkSession.builder \
 df = spark.sql("SELECT * FROM default.tfl_underground_result_n")
 
 # =======================
+# PRINT SCHEMA TO DEBUG COLUMN NAMES
+# =======================
+df.printSchema()
+
+# =======================
 # FEATURE ENGINEERING
 # =======================
-df = df.withColumn('hour', hour(col('timestamp')))
-df = df.withColumn('day_of_week', dayofweek(col('timestamp')))
-df = df.withColumn('month', month(col('timestamp')))
-df = df.withColumn('year', year(col('timestamp')))
 
+df = df.withColumn('hour', hour(col('ingestion_timestamp')))
+df = df.withColumn('day_of_week', dayofweek(col('ingestion_timestamp')))
+df = df.withColumn('month', month(col('ingestion_timestamp')))
+df = df.withColumn('year', year(col('ingestion_timestamp')))
+
+# Remove special characters from 'reason' column
 df = df.withColumn('reason', regexp_replace(col('reason'), '[^a-zA-Z0-9 ]', ''))
 
 # =======================
@@ -83,7 +92,7 @@ output_path = "output/predictions.csv"
 rf_preds.select("features", "status_index", "prediction") \
     .write.csv(output_path, header=True, mode="overwrite")
 
-print("Predictions saved at {}".format(output_path))
+print(f"Predictions saved at {output_path}")
 
 # =======================
 # STOP SPARK SESSION
