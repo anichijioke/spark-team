@@ -26,14 +26,14 @@ spark = SparkSession.builder \
 df = spark.sql("SELECT * FROM default.tfl_underground_result_n")
 
 # =======================
-# CACHE DATAFRAME TO AVOID RECOMPUTATION
+# PRINT SCHEMA TO DEBUG COLUMN NAMES
 # =======================
-df.cache()
-df.count()  # Force cache to load data
+df.printSchema()
 
 # =======================
 # FEATURE ENGINEERING
 # =======================
+
 df = df.withColumn('hour', hour(col('ingestion_timestamp')))
 df = df.withColumn('day_of_week', dayofweek(col('ingestion_timestamp')))
 df = df.withColumn('month', month(col('ingestion_timestamp')))
@@ -54,11 +54,6 @@ for indexer in indexers:
     df = indexer.transform(df)
 
 # =======================
-# REDUCE DATA SIZE BY REPARTITIONING
-# =======================
-df = df.repartition(100)
-
-# =======================
 # ONE-HOT ENCODING (Using OneHotEncoderEstimator for Cloudera compatibility)
 # =======================
 encoder = OneHotEncoderEstimator(
@@ -67,12 +62,6 @@ encoder = OneHotEncoderEstimator(
 )
 
 df = encoder.fit(df).transform(df)
-
-# =======================
-# CACHE TRANSFORMED DATA TO SPEED UP PROCESSING
-# =======================
-df.cache()
-df.count()  # Force Spark to cache the new transformed dataset
 
 # =======================
 # VECTOR ASSEMBLER (Combine all features)
@@ -100,19 +89,31 @@ train_data.count()  # Preload train data
 
 # Train Random Forest Model with optimized settings
 print("Training Random Forest...")
-rf = RandomForestClassifier(featuresCol="features", labelCol="status_index", numTrees=50, maxDepth=10)
+rf = RandomForestClassifier(
+    featuresCol="features",
+    labelCol="status_index",
+    numTrees=50,
+    maxDepth=10
+)
 rf_model = rf.fit(train_data)
 
 # Predict on Test Data
 rf_preds = rf_model.transform(test_data)
 
 # =======================
+# SELECT COLUMNS TO MATCH EXPECTED OUTPUT
+# =======================
+output_df = rf_preds.select("features", "status_index", "rawPrediction", "probability", "prediction")
+
+# Show sample of output
+output_df.show(5, truncate=False)
+
+# =======================
 # SAVE OUTPUT TO CSV (For Jenkins)
 # =======================
 output_path = "output/predictions.csv"
 
-rf_preds.select("features", "status_index", "prediction") \
-    .write.csv(output_path, header=True, mode="overwrite")
+output_df.write.csv(output_path, header=True, mode="overwrite")
 
 print("Predictions saved at {}".format(output_path))  # Avoid f-string for compatibility
 
