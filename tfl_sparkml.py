@@ -92,7 +92,7 @@ output_path = "output/predictions.csv"
 rf_preds.select("features", "status_index", "prediction") \
     .write.csv(output_path, header=True, mode="overwrite")
 
-print(f"Predictions saved at {output_path}")
+print("Predictions saved at {}".format(output_path))
 
 # =======================
 # STOP SPARK SESSION
