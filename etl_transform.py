@@ -22,7 +22,7 @@ df_source = spark.sql("SELECT * FROM {}".format(source_table))
 # Step 2: Check if the table exists and get the last processed record_id
 try:
     print("Step 2: Fetching last processed record_id from target table")
-    last_recordid = spark.sql(f"SELECT MAX(record_id) FROM {target_table}").collect()[0][0]
+    last_recordid = spark.sql("SELECT MAX(record_id) FROM {}".format(target_table)).collect()[0][0]
 except Exception as e:
     last_recordid = None
 
