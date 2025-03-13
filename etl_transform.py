@@ -30,7 +30,7 @@ except Exception as e:
 if last_recordid is None:
     last_recordid = 0
 
-print(f"Last processed record_id: {last_recordid}")
+print("Last processed record_id: {}".format(last_recordid))
 
 # Step 3: Filter new records that haven't been processed
 df_new = df_source.filter(col("record_id") > last_recordid)
