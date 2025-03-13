@@ -17,7 +17,7 @@ target_table = "default.tfl_underground_result"
 
 # Step 1: Load data from the source Hive table
 print("Step 1: Reading data from Hive table")
-df_source = spark.sql(f"SELECT * FROM {source_table}")
+df_source = spark.sql("SELECT * FROM {}".format(source_table))
 
 # Step 2: Check if the table exists and get the last processed record_id
 try:
