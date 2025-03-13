@@ -50,12 +50,13 @@ for indexer in indexers:
     df = indexer.transform(df)
 
 # =======================
-# ONE-HOT ENCODING
+# ONE-HOT ENCODING (New Syntax for Spark 3.5.4)
 # =======================
 encoder = OneHotEncoder(
     inputCols=["line_index", "reason_index", "route_index"],
     outputCols=["line_vec", "reason_vec", "route_vec"]
 )
+
 df = encoder.fit(df).transform(df)
 
 # =======================
@@ -92,7 +93,7 @@ output_path = "output/predictions.csv"
 rf_preds.select("features", "status_index", "prediction") \
     .write.csv(output_path, header=True, mode="overwrite")
 
-print("Predictions saved at {}".format(output_path))
+print("Predictions saved at {}".format(output_path))  # Avoid f-string for compatibility
 
 # =======================
 # STOP SPARK SESSION
