@@ -1,89 +1,70 @@
-# -*- coding: utf-8 -*-
 from pyspark.sql import SparkSession
-from pyspark.sql.functions import col, current_timestamp, row_number
-from pyspark.sql import functions as F
-from pyspark.sql.window import Window
+from pyspark.sql.functions import col, current_timestamp, regexp_replace, monotonically_increasing_id
+from pyspark.sql.types import IntegerType
+import logging
 
-# Initialize Spark Session with Hive Support
+# Initialize Logging
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
+
+# Create Spark session with Hive support
 spark = SparkSession.builder \
-    .appName("Hive ETL Pipeline") \
+    .appName("Hive Table Insert with Auto Increment Record ID") \
     .enableHiveSupport() \
     .getOrCreate()
 
-spark.sparkContext.setLogLevel("ERROR")
+# Define database and tables
+HIVE_DB = "default"
+SOURCE_TABLE = "tfl_undergroundrecord"
+TARGET_TABLE = "tfl_underground_result_n"
 
-# Define source and target tables
-source_table = "default.tfl_undergroundrecord"
-target_table = "default.tfl_underground_result"
+logger.info("Loading data from source table: %s.%s", HIVE_DB, SOURCE_TABLE)
 
-# Step 1: Load data from the source Hive table
-print("Step 1: Reading data from Hive table...")
-df_source = spark.sql("SELECT * FROM {}".format(source_table))
+# Load data from the source table
+df_source = spark.sql("SELECT * FROM {}.{}".format(HIVE_DB, SOURCE_TABLE))
 
-# Print available columns for debugging
-print("Columns in source table:", df_source.columns)
+# Add an "ingestion_timestamp" column
+df_transformed = df_source.withColumn("ingestion_timestamp", current_timestamp())
 
-# Step 2: Check if target table exists and get the last processed record_id
+# Clean "route", "delay_time", and "reason" columns by removing all quotes
+for col_name in ["route", "delay_time", "reason"]:  # Added "reason" column to the list
+    df_transformed = df_transformed.withColumn(col_name, regexp_replace(col(col_name), r'["\']+', ''))
+
+# Remove NULL values from the "route" column
+df_transformed = df_transformed.filter(col("route").isNotNull())
+
+# Ensure target table exists before querying max(record_id)
 try:
-    print("Step 2: Fetching last processed record_id from target table...")
-    last_recordid = spark.sql("SELECT MAX(record_id) FROM {}".format(target_table)).collect()[0][0]
-except Exception as e:
-    last_recordid = None
+    max_record_id_query = "SELECT MAX(record_id) FROM {}.{}".format(HIVE_DB, TARGET_TABLE)
+    max_record_id = spark.sql(max_record_id_query).collect()[0][0] or 0
+    logger.info("Max existing record_id: %d", max_record_id)
+except:
+    logger.warning("Table %s.%s does not exist. Starting record_id from 1.", HIVE_DB, TARGET_TABLE)
+    max_record_id = 0
 
-# If the table is empty or doesn't exist, set last_recordid to 0
-if last_recordid is None:
-    last_recordid = 0
+# Generate a unique record_id using monotonically_increasing_id
+df_transformed = df_transformed.withColumn("record_id", (monotonically_increasing_id() + max_record_id).cast(IntegerType()))
 
-print("Last processed record_id: {}".format(last_recordid))
+# Ensure column order matches the Hive table
+expected_columns = ["record_id", "timedetails", "line", "status", "reason", "delay_time", "route", "ingestion_timestamp"]
+df_final = df_transformed.select(*expected_columns)
 
-# Step 3: Generate record_id dynamically using row_number()
-print("Step 3: Generating record_id dynamically...")
+# Sort data by "timedetails" in descending order to make the most recent data appear first
+df_sorted = df_final.orderBy(col("timedetails").desc())
 
-# Define a window specification based on a stable sorting column
-# If your source table has a timestamp column, use it instead of "timedetails"
-windowSpec = Window.orderBy("timedetails")
+logger.info("Writing transformed and sorted data to Hive table: %s.%s", HIVE_DB, TARGET_TABLE)
 
-df_source = df_source.withColumn("record_id", row_number().over(windowSpec))
+# Append data into the existing Hive table, ensuring no duplication
+df_sorted.createOrReplaceTempView("new_data")
 
-# Step 4: Filter new records
-df_new = df_source.filter(col("record_id") > last_recordid)
+# Use a left anti join to avoid duplicating existing records based on record_id
+df_existing = spark.sql("SELECT * FROM {}.{}".format(HIVE_DB, TARGET_TABLE))
+df_unique = df_sorted.join(df_existing, "record_id", "left_anti")
 
-# ✅ Fix: Use rdd.isEmpty() instead of isEmpty()
-if df_new.rdd.isEmpty():
-    print("No new records to process. Exiting...")
-    spark.stop()
-    exit()
+# Write only new data
+df_unique.write.mode("append").insertInto("{}.{}".format(HIVE_DB, TARGET_TABLE))
 
-# Step 5: Transformations
-print("Step 4: Performing transformations...")
+logger.info("Data successfully written to Hive. Closing Spark session.")
 
-# Remove rows where critical fields are NULL
-df_transformed = df_new.filter(col("route").isNotNull())
-
-# Add ingestion timestamp
-df_transformed = df_transformed.withColumn("ingestion_timestamp", current_timestamp())
-
-# Filter out unwanted values in timedetails
-invalid_values = [
-    'timedetails', 'timedetails String', 'status String', 'route String',
-    'reason String', 'line String', 'id int', 'delay_time String',
-    'STORED AS TEXTFILE', 'ROW FORMAT DELIMITED',
-    'LOCATION /tmp/big_datajan2025/TFL/TFL_UndergroundRecord',
-    'LINES TERMINATED BY \\n', 'FIELD TERMINATED BY ',
-    'CREATE EXTERNAL TABLE default.tfl_ugrFullScoop ('
-]
-
-df_transformed = df_transformed.filter(~col("timedetails").isin(invalid_values))
-df_transformed = df_transformed.filter(col("timedetails").isNotNull())
-
-# Display transformed data for debugging
-df_transformed.show()
-
-# Step 6: Write transformed data to Hive table (append mode to avoid overwriting)
-print("Step 5: Writing transformed data to Hive table...")
-df_transformed.write.mode("append").format("hive").insertInto(target_table)
-
-print("ETL Process Completed Successfully!")
-
-# Stop Spark Session
+# Stop Spark session
 spark.stop()
