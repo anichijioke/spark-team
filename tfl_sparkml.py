@@ -17,7 +17,7 @@ spark = SparkSession.builder \
 # =======================
 # READ DATA FROM HIVE TABLE
 # =======================
-df = spark.sql("SELECT * FROM scala_tfl_underground")
+df = spark.sql("SELECT * FROM default.tfl_undergroundreslt_n")
 
 # =======================
 # FEATURE ENGINEERING
