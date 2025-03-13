@@ -47,8 +47,8 @@ df_source = df_source.withColumn("record_id", row_number().over(windowSpec))
 # Step 4: Filter new records
 df_new = df_source.filter(col("record_id") > last_recordid)
 
-# If no new records, exit early
-if df_new.isEmpty():
+# ✅ Fix: Use rdd.isEmpty() instead of isEmpty()
+if df_new.rdd.isEmpty():
     print("No new records to process. Exiting...")
     spark.stop()
     exit()
