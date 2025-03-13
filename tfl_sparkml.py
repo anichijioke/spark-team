@@ -24,6 +24,7 @@ spark = SparkSession.builder \
 # READ DATA FROM HIVE TABLE
 # =======================
 df = spark.sql("SELECT * FROM default.tfl_underground_result_n")
+df = df.repartition(50)
 
 # =======================
 # PRINT SCHEMA TO DEBUG COLUMN NAMES
