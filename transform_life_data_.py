@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 import logging
 from pyspark.sql import SparkSession
 from pyspark.sql.functions import col, regexp_replace
