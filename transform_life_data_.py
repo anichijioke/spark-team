@@ -1,29 +1,37 @@
+import logging
 from pyspark.sql import SparkSession
-from pyspark.sql.functions import col, regexp_replace, expr
+from pyspark.sql.functions import col, regexp_replace
 
-# Initialize Spark session
-spark = SparkSession.builder.appName("TfL Tube Status Transformation").getOrCreate()
+# ✅ Initialize Logger
+logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
+logger = logging.getLogger(__name__)
 
-# Define database and tables
+# ✅ Start Spark Session
+spark = SparkSession.builder.appName("Transform_Life_Data").enableHiveSupport().getOrCreate()
+
+# ✅ Define Hive Database & Tables
 HIVE_DB = "default"
-SOURCE_TABLE = "tfl_tube_status"
+SOURCE_TABLE = "tfl_undergroundrecord"
+TARGET_TABLE = "tfl_underground_result_n"
 
+# ✅ Log the start of the process
 logger.info("Loading data from source table: %s.%s", HIVE_DB, SOURCE_TABLE)
 
-# Load data from the source table
-df_source = spark.sql("SELECT * FROM {}.{}".format(HIVE_DB, SOURCE_TABLE))
+# ✅ Load Data from Hive
+df = spark.sql(f"SELECT * FROM {HIVE_DB}.{SOURCE_TABLE}")
 
+# ✅ Clean 'linestatus' Column
+df = df.withColumn("linestatus", regexp_replace(col("linestatus"), r'\\', ''))  # Remove escape characters
+df = df.withColumn("linestatus", regexp_replace(col("linestatus"), r'["\[\]]', ''))  # Remove brackets and quotes
 
-# Rename columns to avoid dots (.)
-df = df_source.withColumnRenamed("tfl_tube_status.name", "line_name") \
-       .withColumnRenamed("tfl_tube_status.linestatus", "line_status") \
-       .withColumnRenamed("tfl_tube_status.timedetails", "time_details")
+# ✅ Log Data Processing Completion
+logger.info("Data transformation completed successfully")
 
-# Clean the "line_status" column
-df = df.withColumn("line_status", regexp_replace(col("line_status"), r'^\["\[\\\\"|"\\\]\"]$', ''))  # Remove extra characters
-df = df.withColumn("line_status", regexp_replace(col("line_status"), r'\\', ''))  # Remove escape characters
-df = df.withColumn("line_status", regexp_replace(col("line_status"), r'["\[\]]', ''))  # Remove brackets and quotes
+# ✅ Write Transformed Data Back to Hive
+df.write.mode("overwrite").saveAsTable(f"{HIVE_DB}.{TARGET_TABLE}")
 
-# Show transformed data
-import ace_tools as tools
-tools.display_dataframe_to_user(name="Transformed TfL Tube Status", dataframe=df)
+logger.info("Transformed data saved to %s.%s", HIVE_DB, TARGET_TABLE)
+
+# ✅ Stop Spark Session
+spark.stop()
+logger.info("Spark session stopped successfully")
