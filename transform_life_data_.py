@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 import logging
 from pyspark.sql import SparkSession
-from pyspark.sql.functions import col, regexp_replace
+from pyspark.sql.functions import col, regexp_replace, to_timestamp, date_format
 
 # ✅ Initialize Logger
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
@@ -25,6 +25,11 @@ df = spark.sql("SELECT * FROM {}.{}".format(HIVE_DB, SOURCE_TABLE))
 df = df.withColumn("linestatus", col("linestatus").getItem(0))  # Extract first element from array
 df = df.withColumn("linestatus", regexp_replace(col("linestatus"), r'[\[\]\"]', ''))  # Remove brackets & quotes
 df = df.withColumn("linestatus", regexp_replace(col("linestatus"), r'\\', ''))  # Remove backslashes
+
+# ✅ Format 'timedetails' Column to "dd/MM/yyyy HH:mm:ss"
+df = df.withColumn("timedetails", regexp_replace(col("timedetails"), r'\.\d+Z$', ''))  # Remove milliseconds & 'Z'
+df = df.withColumn("timedetails", to_timestamp(col("timedetails"), "yyyy-MM-dd'T'HH:mm:ss"))  # Convert to timestamp
+df = df.withColumn("timedetails", date_format(col("timedetails"), "dd/MM/yyyy HH:mm:ss"))  # Format to dd/MM/yyyy HH:mm:ss
 
 # ✅ Log Data Processing Completion
 logger.info("Data transformation completed successfully")
