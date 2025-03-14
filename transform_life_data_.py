@@ -30,7 +30,7 @@ df = df.withColumn("linestatus", regexp_replace(col("linestatus"), r'["\[\]]', '
 logger.info("Data transformation completed successfully")
 
 # ✅ Write Transformed Data Back to Hive
-df.write.mode("overwrite").saveAsTable(f"{HIVE_DB}.{TARGET_TABLE}")
+df.write.mode("overwrite").saveAsTable("{}.{}".format(HIVE_DB, TARGET_TABLE))
 
 logger.info("Transformed data saved to %s.%s", HIVE_DB, TARGET_TABLE)
 
