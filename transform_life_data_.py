@@ -31,8 +31,11 @@ df = df.withColumn("timedetails", regexp_replace(col("timedetails"), r'\.\d+Z$',
 df = df.withColumn("timedetails", to_timestamp(col("timedetails"), "yyyy-MM-dd'T'HH:mm:ss"))  # Convert to timestamp
 df = df.withColumn("timedetails", date_format(col("timedetails"), "dd/MM/yyyy HH:mm:ss"))  # Format to dd/MM/yyyy HH:mm:ss
 
+# ✅ Remove NULL values in 'timedetails'
+df = df.filter(col("timedetails").isNotNull())
+
 # ✅ Log Data Processing Completion
-logger.info("Data transformation completed successfully")
+logger.info("Data transformation completed successfully, NULL values removed.")
 
 # ✅ Write Transformed Data Back to Hive
 df.write.mode("overwrite").saveAsTable("{}.{}".format(HIVE_DB, TARGET_TABLE))
