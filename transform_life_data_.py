@@ -19,7 +19,8 @@ TARGET_TABLE = "TFL_Tube_Result"
 logger.info("Loading data from source table: %s.%s", HIVE_DB, SOURCE_TABLE)
 
 # ✅ Load Data from Hive
-df = spark.sql(f"SELECT * FROM {HIVE_DB}.{SOURCE_TABLE}")
+df = spark.sql("SELECT * FROM {}.{}".format(HIVE_DB, SOURCE_TABLE))
+
 
 # ✅ Clean 'linestatus' Column
 df = df.withColumn("linestatus", regexp_replace(col("linestatus"), r'\\', ''))  # Remove escape characters
