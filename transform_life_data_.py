@@ -11,8 +11,8 @@ spark = SparkSession.builder.appName("Transform_Life_Data").enableHiveSupport().
 
 # ✅ Define Hive Database & Tables
 HIVE_DB = "default"
-SOURCE_TABLE = "tfl_undergroundrecord"
-TARGET_TABLE = "tfl_underground_result_n"
+SOURCE_TABLE = "tfl_tube_status"
+TARGET_TABLE = "TFL_Tube_Result"
 
 # ✅ Log the start of the process
 logger.info("Loading data from source table: %s.%s", HIVE_DB, SOURCE_TABLE)
