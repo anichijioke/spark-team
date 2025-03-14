@@ -35,7 +35,7 @@ df = df.withColumn("timedetails", date_format(col("timedetails"), "dd/MM/yyyy HH
 df = df.filter(col("timedetails").isNotNull())
 
 # ✅ Log Data Processing Completion
-logger.info("Data transformation completed successfully, NULL values removed.")
+logger.info("Data transformation completed successfully")
 
 # ✅ Write Transformed Data Back to Hive
 df.write.mode("overwrite").saveAsTable("{}.{}".format(HIVE_DB, TARGET_TABLE))
