@@ -4,11 +4,18 @@ from pyspark.sql.functions import col, regexp_replace, expr
 # Initialize Spark session
 spark = SparkSession.builder.appName("TfL Tube Status Transformation").getOrCreate()
 
-# Load Data (Assuming DataFrame df_tube_status)
-df = spark.read.format("csv").option("header", "true").load("your_file.csv")  # Replace with actual data source
+# Define database and tables
+HIVE_DB = "default"
+SOURCE_TABLE = "tfl_tube_status"
+
+logger.info("Loading data from source table: %s.%s", HIVE_DB, SOURCE_TABLE)
+
+# Load data from the source table
+df_source = spark.sql("SELECT * FROM {}.{}".format(HIVE_DB, SOURCE_TABLE))
+
 
 # Rename columns to avoid dots (.)
-df = df.withColumnRenamed("tfl_tube_status.name", "line_name") \
+df = df_source.withColumnRenamed("tfl_tube_status.name", "line_name") \
        .withColumnRenamed("tfl_tube_status.linestatus", "line_status") \
        .withColumnRenamed("tfl_tube_status.timedetails", "time_details")
 
