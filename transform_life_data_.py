@@ -21,10 +21,9 @@ logger.info("Loading data from source table: %s.%s", HIVE_DB, SOURCE_TABLE)
 # ✅ Load Data from Hive
 df = spark.sql("SELECT * FROM {}.{}".format(HIVE_DB, SOURCE_TABLE))
 
-
 # ✅ Clean 'linestatus' Column
 df = df.withColumn("linestatus", col("linestatus").getItem(0))  # Extract first element
-df = df.withColumn("linestatus", regexp_replace(col("linestatus"), r'\\', ''))
+df = df.withColumn("linestatus", regexp_replace(col("linestatus"), r'[\[\]\"]', ''))  # Remove brackets & quotes
 
 # ✅ Log Data Processing Completion
 logger.info("Data transformation completed successfully")
